@@ -1,8 +1,8 @@
-#T1 de Fundamentos de Computação Gráfica
+# T1 de Fundamentos de Computação Gráfica
 
 ---
-###Sarah Lacerda da Silva
-####Matrícula 17104191
+### Sarah Lacerda da Silva
+#### Matrícula 17104191
 
 O programa consiste em uma janela com seis subdvisões, que representam as seguintes imagens:
 
@@ -16,7 +16,7 @@ O programa consiste em uma janela com seis subdvisões, que representam as segui
 Ao inicializar o programa a partir de `ExibePoligonosCSG.py` fica necessario receber como argumentos os caminhos de dois
 arquivos de texto com a definição dos primeiros dois polígonos a serem operados.
 
-####O programa também aceita comandos pelo teclado, sendo os seguintes:
+#### O programa também aceita comandos pelo teclado, sendo os seguintes:
 
 | Tecla      | Descrição |
 | ----------- | ----------- |
@@ -31,5 +31,5 @@ arquivos de texto com a definição dos primeiros dois polígonos a serem operad
 *Após realizada uma das operações, o programa salva o(s) polígono(s) resultante(s) em arquivo(s) de texto.
 Se a operação resulta em mais de um polígono, o programa salva cada um em um arquivo diferente.*
 
-####IMPORTANTE! O programa não aceita polígonos com valores negativos na coordenada de seus pontos.
-####IMPORTANTE! Algumas operações com polígonos que possuem arestas compartilhadas podem resultar em problemas.
+#### IMPORTANTE! O programa não aceita polígonos com valores negativos na coordenada de seus pontos.
+#### IMPORTANTE! Algumas operações com polígonos que possuem arestas compartilhadas podem resultar em problemas.
