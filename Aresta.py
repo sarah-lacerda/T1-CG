@@ -1,10 +1,16 @@
+# ************************************************
+#   Aresta.py
+#   Define a classe Aresta
+#   Autora: Sarah Lacerda da Silva
+# ************************************************
+
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from Point import *
+from Ponto import *
 
 class Aresta:   
-    def __init__(self, k=Point(), l=Point()):
+    def __init__(self, k=Ponto(), l=Ponto()):
         self.k = k
         self.l = l
     
@@ -30,8 +36,10 @@ class Aresta:
     def getPontoIntermediario(self):
         PosicaoXDoPontoIntermediario = (self.k.x + self.l.x)/2
         PosicaoYDoPontoIntermediario = (self.k.y + self.l.y)/2
-        return Point(PosicaoXDoPontoIntermediario, PosicaoYDoPontoIntermediario)
+        return Ponto(PosicaoXDoPontoIntermediario, PosicaoYDoPontoIntermediario)
 
+# Funções passadas pelo professor em aula, determinam se existe um ponto de intersecção entre duas arestas.
+# Retorna o ponto de intersecção, caso exista. De outro lado, retorna falso.
 def Intersec2d(arestaA, arestaB):
 
     k = arestaA.getPontoInicial()
@@ -59,7 +67,9 @@ def HaIntersec(arestaA, arestaB):
     if not ret:
         return False
     if ret[0] >= 0.0 and ret[0] <= 1.0 and ret[1] >= 0.0 and ret[1] <= 1.0:
-        PontoDeInterseccao = Point(round(k.x + (l.x - k.x) * ret[0], 2), round(k.y + (l.y - k.y) * ret[0], 2))
+        pontoInicial = round((k.x + (l.x - k.x) * ret[0]), 2)
+        pontoFinal = round((k.y + (l.y - k.y) * ret[0]), 2)
+        PontoDeInterseccao = Ponto(pontoInicial, pontoFinal)
         return PontoDeInterseccao
     else:
         return False

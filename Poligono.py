@@ -1,19 +1,18 @@
 # ************************************************
-#   Poligonos.py
-#   Define a classe Polygon
+#   Poligono.py
+#   Define a classe Poligono
 #   Autor: Márcio Sarroglia Pinho
 #       pinho@pucrs.br
+#   Adaptada por Sarah Lacerda da Silva
 # ************************************************
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from Point import *
+from Ponto import *
 from Aresta import *
-import copy
-import random
+import copy, random, math
 
-
-class Polygon:
+class Poligono:
 
     def __init__(self):
         self.Vertices = []
@@ -22,11 +21,11 @@ class Polygon:
     def getNVertices(self):
         return len(self.Vertices)
     
-    def insereVertice(self, Point, position = -1):
+    def insereVertice(self, ponto, position = -1):
         if position == -1:
-            self.Vertices += [Point]
+            self.Vertices += [ponto]
         else:
-            self.Vertices = self.Vertices[:position] + [Point] + self.Vertices[position:]
+            self.Vertices = self.Vertices[:position] + [ponto] + self.Vertices[position:]
 
     def desenhaPoligono(self):
         glBegin(GL_LINE_LOOP)
@@ -92,8 +91,8 @@ class Polygon:
 
             return arestas
 
-    #Algoritmo de checar se os vertices estão em sentido horário inspirado no algoritmo encontrado na
-    #seguinte referência: https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
+    # Algoritmo de checar se os vértices do polígono estão em sentido horário inspirado no algoritmo encontrado na
+    # seguinte referência: https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
     def defineSentidoHorario(self):
         sum = 0
 
@@ -123,8 +122,6 @@ class Polygon:
                 Min.y = V.y
             if V.z < Min.z:
                 Min.z = V.z
-        #Min.imprime()
-        #Max.imprime()
         return Min, Max
     
     def EhPontoMinimoOuMaximoLocal(self, ponto):
@@ -142,10 +139,16 @@ class Polygon:
                 return i
         return False
     
+    def TemPonto(self, ponto):
+        for vertice in self.Vertices:
+            if vertice.x == ponto.x and vertice.y == ponto.y and vertice.z == ponto.z:
+                return True
+        return False
+
     def PontoEstaDentro (self, ponto):
         poligonoMinMax = self.getLimits()
         numVerticesPoligono = self.getNVertices()
-        arestaBase = Aresta(ponto, Point(poligonoMinMax[0].x-1, ponto.y))
+        arestaBase = Aresta(ponto, Ponto(poligonoMinMax[0].x-1, ponto.y))
         numInterseccoes = 0
 
         for i in range(numVerticesPoligono):
@@ -162,11 +165,36 @@ class Polygon:
 
         return numInterseccoes % 2 == 1
 
-def CriaPoligonoComInterseccoes (poligonoA, poligonoB):
+    def LePontosDeArquivo(self, Nome):
+        self.Vertices = []
+        infile = open(Nome)
+        line = infile.readline()
+        for line in infile:
+            words = line.split()
+            x = float (words[0])
+            y = float (words[1])
+            Pt = Ponto(x, y)
+            self.insereVertice(Pt)
+        infile.close()
+    
+    def SalvaParaArquivo(self, Nome):
+        with open(Nome, 'w') as f:
+            f.write(str(self.getNVertices()) + '\n')
+            for vertice in self.Vertices:
+                f.write("{} {}\n".format(vertice.x, vertice.y))
+
+def CriaPoligonosComInterseccoes (poligonoA, poligonoB):
+    
     poligonoAComInterseccoes = copy.deepcopy(poligonoA)
+    poligonoBComInterseccoes = copy.deepcopy(poligonoB)
+
+    VerticesA = poligonoA.Vertices
     VerticesB = poligonoB.Vertices
+
     numVerticesA = poligonoAComInterseccoes.getNVertices()
     numVerticesB = poligonoB.getNVertices()
+
+    pontosDeInterseccao = copy.deepcopy(VerticesA)
 
     for i in range(numVerticesB):
         arestaB = Aresta(VerticesB[i], VerticesB[(i+1) % numVerticesB])
@@ -176,19 +204,55 @@ def CriaPoligonoComInterseccoes (poligonoA, poligonoB):
             arestaA = Aresta(VerticesA[j], VerticesA[(j+1) % numVerticesA])
             pontoDeInterseccao = HaIntersec(arestaA, arestaB)
             if pontoDeInterseccao:
-                poligonoAComInterseccoes.insereVertice(pontoDeInterseccao, j + 1)
-                numVerticesA += 1
-                j += 1
+                if not poligonoAComInterseccoes.TemPonto(pontoDeInterseccao):
+                    pontosDeInterseccao.append(pontoDeInterseccao)
+                    poligonoAComInterseccoes.insereVertice(pontoDeInterseccao, j + 1)
+                    numVerticesA += 1
+                    j += 1
             j += 1
 
-    return poligonoAComInterseccoes
+    for i in range(numVerticesA):
+        arestaA = Aresta(VerticesA[i], VerticesA[(i+1) % numVerticesA])
+        j = 0
+        while j < numVerticesB:
+            VerticesB = poligonoBComInterseccoes.Vertices
+            arestaB = Aresta(VerticesB[j], VerticesB[(j+1) % numVerticesB])
+            pontoDeInterseccao = HaIntersec(arestaB, arestaA)
+            if pontoDeInterseccao:
+
+                noMatch = True
+                for ponto in pontosDeInterseccao:
+                    if pontoDeInterseccao.x == ponto.x and pontoDeInterseccao.y == ponto.y and pontoDeInterseccao.z == ponto.z:
+                        noMatch = False
+
+                if noMatch:
+                    indexMinDist = 0
+                    minDist = math.sqrt((pontoDeInterseccao.x - pontosDeInterseccao[0].x)**2 + (pontoDeInterseccao.y - pontosDeInterseccao[0].y)**2 + (pontoDeInterseccao.z - pontosDeInterseccao[0].z)**2)
+
+                    for i in range(1, len(pontosDeInterseccao)):
+                        currentDist = math.sqrt((pontoDeInterseccao.x - pontosDeInterseccao[i].x)**2 + (pontoDeInterseccao.y - pontosDeInterseccao[i].y)**2 + (pontoDeInterseccao.z - pontosDeInterseccao[i].z)**2)
+                        if currentDist < minDist:
+                            minDist = currentDist
+                            indexMinDist = i
+                    
+                    pontoDeInterseccao = pontosDeInterseccao[indexMinDist]
+
+                if not poligonoBComInterseccoes.TemPonto(pontoDeInterseccao):
+                    poligonoBComInterseccoes.insereVertice(pontoDeInterseccao, j + 1)
+                    numVerticesB += 1
+                    j += 1
+            j += 1
+
+    return poligonoAComInterseccoes, poligonoBComInterseccoes
 
 def fazOperacoesPoligonos(poligonoA, poligonoB, operacao):
+
+    AComIntersec, BComIntersec = CriaPoligonosComInterseccoes(poligonoA, poligonoB)
 
     arestasA = []
     arestasB = []
 
-    for aresta in poligonoA.getArestas():
+    for aresta in AComIntersec.getArestas():
         if operacao == "uniao" or operacao == "sub":
             if not poligonoB.PontoEstaDentro(aresta.getPontoIntermediario()):
                 arestasA += [aresta]
@@ -198,7 +262,7 @@ def fazOperacoesPoligonos(poligonoA, poligonoB, operacao):
     
     reverse = operacao == "sub"
 
-    for aresta in poligonoB.getArestas(reverse):
+    for aresta in BComIntersec.getArestas(reverse):
         if operacao == "uniao":
             if not poligonoA.PontoEstaDentro(aresta.getPontoIntermediario()):
                 arestasB += [aresta]
@@ -206,51 +270,52 @@ def fazOperacoesPoligonos(poligonoA, poligonoB, operacao):
             if poligonoA.PontoEstaDentro(aresta.getPontoIntermediario()):
                 arestasB += [aresta]
 
-    PoligonosRetorno = []
-
-    while arestasA or arestasB:
-        
-        if len(arestasA) >= len(arestasB):
-            arestasPoligonoFinal = EncontraCiclo(arestasA, arestasB)
-        else:
-            arestasPoligonoFinal = EncontraCiclo(arestasB, arestasA)
-
-        PoligonoRetorno = Polygon()
-        
-        for aresta in arestasPoligonoFinal:
-            PoligonoRetorno.insereVertice(aresta.getPontoInicial())
-
-        PoligonosRetorno += [PoligonoRetorno]
+    PoligonosRetorno = EncontraCiclos(arestasA, arestasB)
 
     return PoligonosRetorno
 
-def EncontraCiclo(arestasA, arestasB):
+def EncontraCiclos(arestasA, arestasB):
 
-    arestasResposta = []
+    poligonosRetorno = []
 
-    arestasResposta.append(arestasA.pop(0))
-    
-    arestaInicioArestasResposta = arestasResposta[0]
-    arestaFimArestasResposta = arestasResposta[-1]
+    arestasTotais = arestasA + arestasB
 
-    while not (arestaInicioArestasResposta.getPontoInicial().x == arestaFimArestasResposta.getPontoFinal().x and arestaInicioArestasResposta.getPontoInicial().y == arestaFimArestasResposta.getPontoFinal().y):
+    while arestasTotais:
+        
+        # Impede loop infinito
+        numArestas = len(arestasTotais)
 
-        index = -1
+        poligono = Poligono()
+        arestasCiclo = []
 
-        for i, aresta in enumerate(arestasA):
-            if aresta.getPontoInicial().x == arestaFimArestasResposta.getPontoFinal().x and aresta.getPontoInicial().y == arestaFimArestasResposta.getPontoFinal().y:    
-                index = i
-                break
-        if index != -1:
-            arestasResposta.append(arestasA.pop(index))
-        else:
-            for i, aresta in enumerate(arestasB):
-                if aresta.getPontoInicial().x == arestaFimArestasResposta.getPontoFinal().x and aresta.getPontoInicial().y == arestaFimArestasResposta.getPontoFinal().y:    
-                    index = i
+        arestasCiclo.append(arestasTotais.pop(0))
+        arestaInicioCiclo = arestasCiclo[0]
+        arestaFimCiclo = arestasCiclo[-1]
+
+        while not (arestaInicioCiclo.getPontoInicial().x == arestaFimCiclo.getPontoFinal().x and arestaInicioCiclo.getPontoInicial().y == arestaFimCiclo.getPontoFinal().y):
+
+            # Impede loop infinito
+            numArestasInsideLoop = len(arestasTotais)
+
+            for i, aresta in enumerate(arestasTotais):
+                if aresta.getPontoInicial().x == arestaFimCiclo.getPontoFinal().x and aresta.getPontoInicial().y == arestaFimCiclo.getPontoFinal().y:    
+                    arestasCiclo.append(arestasTotais.pop(i))
                     break
-            arestasResposta.append(arestasB.pop(index))
 
-        arestaInicioArestasResposta = arestasResposta[0]
-        arestaFimArestasResposta = arestasResposta[-1]
-    
-    return arestasResposta
+            arestaInicioCiclo = arestasCiclo[0]
+            arestaFimCiclo = arestasCiclo[-1]
+
+            # Impede loop infinito
+            if numArestasInsideLoop == len(arestasTotais):
+                return []
+
+        for aresta in arestasCiclo:
+            poligono.insereVertice(aresta.getPontoInicial())
+
+        poligonosRetorno += [poligono]
+        
+        # Impede loop infinito
+        if numArestas == len(arestasTotais):
+            return []
+
+    return poligonosRetorno
