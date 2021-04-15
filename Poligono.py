@@ -168,9 +168,9 @@ class Poligono:
     def LePontosDeArquivo(self, Nome):
         self.Vertices = []
         infile = open(Nome)
-        line = infile.readline()
-        for line in infile:
-            words = line.split()
+        line = int(infile.readline())
+        for _ in range(line):
+            words = infile.readline().split()
             x = float (words[0])
             y = float (words[1])
             Pt = Ponto(x, y)
